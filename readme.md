@@ -15,8 +15,8 @@
 <br><em>Somewhere in code: </em>
 <pre>
 	var map = L.map('map').setView([someLat,someLng], someZoom);
-<br>	var mapLayer=L.tileLayer.dbTileLayer('http://someServer/tile/{z}/{y}/{x}', {attribution: 'Some attribute',});		
+<br>	var mapLayer=L.tileLayer.dbTileLayer('http://someServer/tile/{z}/{y}/{x}', {attribution: 'someAttribute',});		
 <br>	mapLayer.addTo(map)
 </pre>
 
-<h3 style="color:red">Have a fun!</h3>
+<h3 style="color:red;">Have a fun!</h3>
