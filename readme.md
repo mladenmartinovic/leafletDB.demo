@@ -1,5 +1,16 @@
 # test number 1
 
+<pre>
+My solution of offline map using leaflet.js and IndexedDB. 
+IndexedDB consists of two tables, Tile and TileMemCache. 
+Table Tile consist of JPEG image. IndexeDB saves 200 tiles. Tiles which came to 201 place is deleted. Tiles that were used last are on the first place, the oldest on a last place or delete.
+TileMemCache is table width the url of individual maps. The whole logic revolves around TileMemCache. 
+
+TileMemCache is name of table and has nothing to do with memcached.
+
+File has been tested on Chrome and FireFox and works.
+
+</pre>
 <br><b>Usage of file is simple:</b>
 <br><em>at the begining of html:</em>
 <br>  \<link rel="stylesheet" href="lib/leaflet/leaflet.css" /\>
