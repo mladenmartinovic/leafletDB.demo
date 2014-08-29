@@ -1,6 +1,6 @@
 # test number 1
 
-<br>Usage of file is simple:
+<br><b>Usage of file is simple:</b>
 <br><em>at the begining of html:</em>
 <br>  \<link rel="stylesheet" href="lib/leaflet/leaflet.css" /\>
 
@@ -14,9 +14,9 @@
 
 <br><em>Somewhere in code: </em>
 <pre>
-	var map = L.map('map').setView([someLat,someLng], Some zoom);
+	var map = L.map('map').setView([someLat,someLng], someZoom);
 <br>	var mapLayer=L.tileLayer.dbTileLayer('http://someServer/tile/{z}/{y}/{x}', {attribution: 'Some attribute',});		
 <br>	mapLayer.addTo(map)
 </pre>
 
-<h3 style="color:red">Have a fun!<h3>
+<h3 style="color:red">Have a fun!</h3>
