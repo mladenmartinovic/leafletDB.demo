@@ -1,4 +1,4 @@
-# verson 0.1
+<h3> dbTileLayer.js verson 0.1 </h3>
 
 <pre>
 My solution of offline map using leaflet.js and IndexedDB. 
@@ -30,4 +30,4 @@ File has been tested on Chrome and FireFox and works. It will be better soon.
 <br>	mapLayer.addTo(map)
 </pre>
 
-<h3 style="color:red;">Have a fun!</h3>
+<h4 style="color:red;">Have a fun!</h4>
