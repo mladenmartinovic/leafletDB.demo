@@ -1,4 +1,4 @@
-# test number 1
+# verson 0.1
 
 <pre>
 My solution of offline map using leaflet.js and IndexedDB. 
@@ -9,7 +9,7 @@ TileMemCache is table width the url of individual maps.
 The whole logic revolves around TileMemCache. 
 TileMemCache is name of table and has nothing to do with memcached.
 
-File has been tested on Chrome and FireFox and works.
+File has been tested on Chrome and FireFox and works. It will be better soon.
 </pre>
 <br><b>Usage of file is simple:</b>
 <br><em>at the begining of html:</em>
