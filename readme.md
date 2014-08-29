@@ -1,4 +1,5 @@
-<h3> dbTileLayer.js verson 0.1 </h3>
+<h3> dbTileLayer.js</h3> 
+<em>verson 0.1</em> 
 
 <pre>
 My solution of offline map using leaflet.js and IndexedDB. 
