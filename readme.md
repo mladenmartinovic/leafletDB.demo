@@ -4,7 +4,7 @@
 <pre>
 My solution of offline map using leaflet.js and indexedDB. 
 IndexedDB consists of two tables, Tile and TileMemCache. 
-Table Tile consist of JPEG image, 200 tiles was forseen width logic of TileMemCache. 
+Table Tile consist of png images converted from canvas, 200 tiles was forseen width logic of TileMemCache. 
 Tiles which came to 201 place is deleted, but it can be extended. Logic is (FILO): 
 tiles that were used last are on the first place, the oldest on a last place or delete. 
 Its good for now but not finished yet.
