@@ -187,7 +187,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 											console.log("HEBI GA")
 										}
 									})
-								},1000)
+								},Math.random()*1000 + 1000)
 							}
 						})
 					}
@@ -366,7 +366,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 							var context = canvas.getContext('2d');
 							context.drawImage(image, 0, 0);
 
-							var imageFile=canvas.toDataURL('image/png');
+							var imageFile=canvas.toDataURL("image/jpeg",0.15);
 							$this.setTileMemCache({url:data.url, image:imageFile});
 						
 						}
