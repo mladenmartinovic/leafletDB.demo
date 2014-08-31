@@ -33,6 +33,6 @@ File has been tested on Chrome and FireFox and works. It will be better soon.
 <br>	var mapLayer=L.tileLayer.dbTileLayer('http://someServer/tile/{z}/{y}/{x}', {attribution: 'someAttribute',});		
 <br>	mapLayer.addTo(map)
 </pre>
-<a href="http://plnkr.co/edit/OMWh0RrV5UCghRGnA5UO?p=preview"  target="dbTileLayer">Test example</a>
+<a href="http://plnkr.co/edit/3yk2ysbVGNtsgluPsVPQ?p=preview"  target="dbTileLayer">Test example</a>
 
 <h4>Have a fun!</h4>
