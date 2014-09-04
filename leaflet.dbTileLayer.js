@@ -1,13 +1,161 @@
 'use strict';
+var LZW={}
+LZW = {
+	compress : function(uncompressed){
+		var i, dictionary={}, c, wc, w="", result=[], dictSize=256
+		for (i=0;i<dictSize;i++){
+			dictionary[String.fromCharCode(i)]=i;
+		}
+		
+		for (i=0; i< uncompressed.length;i++){
+			c=uncompressed.charAt(i)
+			wc=w+c;
+			if (dictionary.hasOwnProperty(wc)) {
+				w=wc;
+			} else {
+				result.push(dictionary[w])
+				dictionary[wc]=dictSize++;
+				w=String(c)
+			}
+		}
+		if (w !=="") {
+			result.push(dictionary[w])
+		}
+		return result
+	} ,
+	decompress : function(compressed){
+		var i, dictionary=[], w, result, k, entry="", dictSize=256;
+		for (i=0;i<dictSize;i++){
+			dictionary[i]=String.fromCharCode(i);
+		}
+		
+		w=String.fromCharCode(compressed[0])
+		result=w;
+		for (i=1;i<compressed.length;i++){
+			k=compressed[i]
+			if (dictionary[k]) {
+				entry=dictionary[k];
+			} else {	
+				if (k===dictSize) {
+					entry=w + w.charAt(0)
+				} else {
+
+					return null;
+				}
+			}
+			result += entry;
+			dictionary[dictSize++]=w + entry.charAt(0);
+			w=entry;
+		}	
+		return result;
+	}
+	
+}
+function ascForEach(array, fn, callback) {
+	  array = array.slice(0);
+	  function processOne() {
+		var item = array.shift();
+		fn(item, function(result) {
+			if(array.length > 0) {
+			  setTimeout(processOne, 5); 
+			} else {
+			  callback();
+			}
+		  });
+	  }
+	  if(array.length > 0) {
+		setTimeout(processOne, 5); 
+	  } else {
+		callback(); 
+	  }		
+	}
+function fixTile($this, List0, List1, maxTile) {
+	var shiftVal;
+	if (List0.length > maxTile) {
+		shiftVal=List0.shift();
+		List1.push(shiftVal);
+	}
+	
+	if (List1.length > maxTile) {
+		shiftVal=List1.shift()
+		var forDel=shiftVal
+		// remove map from database
+		if ($this.timeCacheDict[shiftVal] != null && $this.timeCacheDict[shiftVal] != undefined){
+			var cntTile=0;
+			while (true) {
+				// check of value is on save
+				List0.push(shiftVal);
+				shiftVal==List0.shift();
+				List1.push(shiftVal);
+				shiftVal==List1.shift();
+				if ($this.timeCacheDict[shiftVal] == null || $this.timeCacheDict[shiftVal] == undefined){
+					$this.delTile(shiftVal, function(data){
+						console.log("DELETED", data)
+						if (!data){
+							setTimeout(function(){
+								$this.delTile(shiftVal, function(data){
+									console.log("DELETED AGAIN", data)
+									if (!data) {
+										console.log("HEBI GA")
+									}
+								})
+							},Math.random()*1000 + 1000)
+						}
+					})
+					return [List0, List1]
+				}
+				if (i>maxTile) {
+					// za svaki sucaj
+					console.log("this have to be imposibile")
+					$this.delTile(forDel, function(data){
+						console.log("DELETED", data)
+						if (!data){
+							setTimeout(function(){
+								$this.delTile(shiftVal, function(data){
+									console.log("DELETED AGAIN", data)
+									if (!data) {
+										console.log("HEBI GA")
+									}
+								})
+							},Math.random()*1000 + 1000)
+						}
+					})
+					return [List0, List1]
+				}
+				cntTile+=1
+			}	
+		} else {
+			
+			$this.delTile(forDel, function(data){
+				console.log("DELETED", data)
+				if (!data){
+					setTimeout(function(){
+						$this.delTile(shiftVal, function(data){
+							console.log("DELETED AGAIN", data)
+							if (!data) {
+								console.log("HEBI GA")
+							}
+						})
+					},Math.random()*1000 + 1000)
+				}
+			})
+		}
+	}
+	return [List0, List1]
+	
+}
 L.TileLayer.dbTileLayer = L.TileLayer.extend({
 	initialize: function (url, options) {
-		console.log("initialize")
-		var $this=this
 		L.TileLayer.prototype.initialize.call(this, url, options)
+		var $this=this
+		$this.option=$this.options  
 		
+		$this.timeCacheDict={}
 		$this.database = {};
 		$this.database.db = null;
-		$this.database.maxTile = 100;
+		$this.database.maxTile = 50;
+		$this.database.maxNoOfFixDate = 50;
+		
 		$this.memCashList=[[],[]]
 		
 	},
@@ -15,7 +163,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		cb(undefined)
 	},
 	checkDB: function(cb){
-		console.log("checkDB")
 		var $this=this
 		$this.indexedDB=window.indexedDB;
 		if (!$this.indexedDB) {
@@ -27,10 +174,15 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		}
 	},
 	openDB:function(version, cb){
-		console.log("openDB")
 		var $this=this
-		var request=indexedDB.open("map", version)
 		
+		if ($this.option.dbName === null || $this.option.dbName === undefined) {
+			$this.option.dbName=window.location.host + "//map"
+			if ($this.option.dbName === "//map" || $this.option.dbName === "//map") {
+				$this.option.dbName="map"
+			}
+		}
+		var request=indexedDB.open($this.options.dbName, version)
 		request.onupgradeneeded=function(e){
 			var db=e.target.result;
 			e.target.transaction.onerror=indexedDB.onerror;
@@ -41,11 +193,17 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			var store=db.createObjectStore("Tile",
 				{keyPath:"url"});
 				
-			if (db.objectStoreNames.contains("TileMemCache")){
-				db.deleteObjectStore("TileMemCache");
+			if (db.objectStoreNames.contains("MemCache")){
+				db.deleteObjectStore("MemCache");
 			}
-			var store=db.createObjectStore("TileMemCache",
+			var store=db.createObjectStore("MemCache",
 				{keyPath:"key"});	
+			
+			if (db.objectStoreNames.contains("TimeCache")){
+				db.deleteObjectStore("TimeCache");
+			}
+			var store=db.createObjectStore("TimeCache",
+				{keyPath:"key"});
 		}
 		request.onsuccess = function(e) {
 			$this.database.db = e.target.result;
@@ -53,173 +211,84 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		};
 		request.onerror = $this.databaseError;
 	},
-	test : function(){
-		
-		var $this=this;
-		
-		$this.test.result=[]
-		setInterval(function(){
-			
-			console.log("TEST", $this.memCashList[0].length)
-			var dList0={}
-			var dList1={}
-			var p=[]
-			var len=$this.test.result.length
-			for (var i=0;i<len;i++){
-				$this.test.result.pop()
-			}
-			for (var i=0;i<$this.memCashList[0].length;i++) {
-				dList0[$this.memCashList[0][i]]=""
-				$this.getTile($this.memCashList[0][i], function(data){
-					if (data.image===null){
-						var pp= p.length + " vs " + ($this.memCashList[0].length);
-						$this.test.result.push({"NOT OK Test 1 - dbTile vs memCash (list0)": pp})
-					} else {
-						p.push("a")
-						if (p.length==$this.memCashList[0].length) {
-							var pp= p.length + " vs " + ($this.memCashList[0].length);
-							$this.test.result.push({"OK Test 1 - dbTile vs memCash (list0)": pp})
-						}
-					}
-				})
-			}
-			var pl=[]
-			for (var i=0;i<$this.memCashList[1].length;i++) {
-				dList1[$this.memCashList[1][i]]=""
-				$this.getTile($this.memCashList[1][i], function(data){
-					if (data.image===null){
-						var pp= "OK " + pl.length + " vs " + ($this.memCashList[1].length);
-						$this.test.result.push({"NOT OK Test 2 - dbTile vs memCash (list1)": pp})
-					} else {
-						pl.push("a")
-						if (pl.length==$this.memCashList[1].length) {
-							var pp= "OK " + pl.length + " vs " + ($this.memCashList[1].length);
-							$this.test.result.push({"OK Test 2 - dbTile vs memCash (list1)": pp})
-						}
-					}
-				})
-			}
-			if (Object.keys(dList0).length == $this.memCashList[0].length){
-				$this.test.result.push({"OK - UNIQUE TEST LIST 0 TEST LENGTH": Object.keys(dList0).length + " vs " + $this.memCashList[0].length})
-			} else {
-				$this.test.result.push({"NOT OK - UNIQUE TEST LIST 0 TEST LENGTH": Object.keys(dList0).length + " vs " + $this.memCashList[0].length})
-			}
-			if (Object.keys(dList1).length == $this.memCashList[1].length){
-				$this.test.result.push({"OK - UNIQUE TEST LIST 1 TEST LENGTH": Object.keys(dList1).length + " vs " + $this.memCashList[1].length})
-			} else {
-				$this.test.result.push({"NOT OK - UNIQUE TEST LIST 1 TEST LENGTH": Object.keys(dList1).length + " vs " + $this.memCashList[1].length})
-			}
-			
-			var bothList=[];
-			bothList.push.apply(bothList, $this.memCashList[0])
-			bothList.push.apply(bothList, $this.memCashList[1])
-			var dBothList={}
-			for (var i=0;i<bothList.length;i++) {
-				dBothList[bothList[i]]=""
-			}
-			if (Object.keys(dBothList).length == bothList.length){
-				$this.test.result.push({"OK - UNIQUE TEST dBothList TEST LENGTH GOOD": Object.keys(dBothList).length + " vs " + bothList.length})
-			} else {
-				$this.test.result.push({"NOT OK - UNIQUE TEST dBothList TEST LENGTH GOOD": Object.keys(dBothList).length + " vs " + bothList.length})
-			}
-			$this.getTiles( function(data){
-				if (data.length==bothList.length){
-					$this.test.result.push({"OK - COMPARE db Tiles vs bothList": data.length + " vs " + bothList.length})
-				} else {
-					$this.test.result.push({"NOT OK - COMPARE db Tiles vs bothList": data.length + " vs " + bothList.length})
-				}
-			})
-			
-		},15000)
-	},
-	setTileMemCache:function(urlImage){
-		console.log("setTileMemCache")
+	setTile_setMemCache_setTimeCacheDict:function(urlImage){
 		var $this=this
 		var db = $this.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
-		}
-		
-		else {
+		} else {
 			
 			var List0=[]
 			var List1=[]
 			
-			// little test
-	
-				
-					var t=false;
-					for (var i=0;i<$this.memCashList[0].length;i++){
-						if ($this.memCashList[0][i]!=urlImage.url) {
-							List0.push($this.memCashList[0][i])
-						} else {
-							t=true;
+			var t=false;
+			for (var i=0;i<$this.memCashList[0].length;i++){
+				if ($this.memCashList[0][i] != urlImage.url) {
+					List0.push($this.memCashList[0][i]);
+				} else {
+					t=true;
+				}
+			}
+			List0.push(urlImage.url)
+			
+			for (var i=0;i<$this.memCashList[1].length;i++){
+				if ($this.memCashList[1][i] != urlImage.url) {
+					List1.push($this.memCashList[1][i])
+				} else {
+					t=true;
+				}
+			}
+			if (!t) {
+				$this.setTile({url:urlImage.url, image:urlImage.image})	
+			}
+			if ($this.option.dateTo != null) {
+				if ( $this.option.dateTo > new Date().getTime() ){
+					if ($this.timeCacheDict[urlImage.url]==null || $this.timeCacheDict[urlImage.url]==undefined){
+						$this.timeCacheDict[urlImage.url]=$this.option.dateTo.getTime();
+						
+					} else {
+						if ($this.option.dateTo.getTime()>$this.timeCacheDict[urlImage.url]) {
+							$this.timeCacheDict[urlImage.url]=$this.option.dateTo.getTime();
 						}
 					}
-					List0.push(urlImage.url)
-					for (var i=0;i<$this.memCashList[1].length;i++){
-						if ($this.memCashList[1][i]!=urlImage.url) {
-							List1.push($this.memCashList[1][i])
-						} else {
-							t=true;
+					for (var key in $this.timeCacheDict){
+						if ($this.timeCacheDict[key] < new Date().getTime()){
+							delete $this.timeCacheDict[key]
 						}
 					}
-					
-					if (!t) {
-						$this.setTile({url:urlImage.url, image:urlImage.image})	
+					if (Object.keys($this.timeCacheDict).length<$this.database.maxNoOfFixDate){
+						$this.setTimeCash($this.timeCacheDict)
 					}
-					var shiftVal;
-					if (List0.length > $this.database.maxTile) {
-						shiftVal=List0.shift();
-						List1.push(shiftVal);
-					}
-					
-					if (List1.length > $this.database.maxTile) {
-						shiftVal=List1.shift()
-						// remove map from database
-						$this.delTile(shiftVal, function(data){
-							console.log("DELETED", data)
-							if (!data){
-								setTimeout(function(){
-									$this.delTile(shiftVal, function(data){
-										console.log("DELETED AGAIN", data)
-										if (!data) {
-											console.log("HEBI GA")
-										}
-									})
-								},Math.random()*1000 + 1000)
-							}
-						})
-					}
-	/*			}  else {
-					List0=[]
-					List0.push(urlImage.url)
-					$this.setTile({url:urlImage.url, image:urlImage.image})	
-					// add map to database
-					List1=[]
-				} */
-				
-				var trans = db.transaction(["TileMemCache"], "readwrite");
-				var store = trans.objectStore("TileMemCache");
-				var time = new Date().getTime();
-				var listKeyTile=[List0, List1]
-				
-				$this.memCashList=listKeyTile
-				var request = store.put({
-					"key":1,
-					"tileList":listKeyTile,
-					"timeStamp":time
-				});
-				request.onerror = function(e) {
-					console.log("ERROR setTile")
-				};				
-
+				}	
+			}
 			
 
+			
+			
+			var listKeyTile=fixTile($this, List0, List1, $this.database.maxTile)
+			
+			
+			$this.memCashList=listKeyTile
+			$this.setMemCache(listKeyTile);
+			
 		}
 	},
-	getTileMemCache:function(callback) {
-		console.log("getTileMemCache")
+	setTimeCash: function(timeCacheDict){	
+		var $this=this
+		var db = $this.database.db;
+		var trans = db.transaction(["TimeCache"], "readwrite");
+		var store = trans.objectStore("TimeCache");
+		var time = new Date().getTime();
+		
+		var request = store.put({
+			"key":0,
+			"timeDict":timeCacheDict
+		});
+		request.onerror = function(e) {
+			console.log("ERROR setTile")
+		};				
+	},
+	getTimeCash:function(callback) {
 		var cb = callback;
 		var $this=this
 		var db = $this.database.db;
@@ -228,10 +297,50 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			cb(null)
 		}
 		else {
-			var trans=db.transaction(["TileMemCache"],"readwrite");
-			var store=trans.objectStore("TileMemCache");		
+			var trans=db.transaction(["TimeCache"],"readwrite");
+			var store=trans.objectStore("TimeCache");		
 
-			var request=store.get(1);
+			var request=store.get(0);
+
+			request.onsuccess=function(e){
+				if (e.target.result){
+					cb(e.target.result.timeDict)
+				} else {	
+					cb({})
+				};
+			};
+			request.onerror=$this.databaseError;
+		}
+	},
+	
+	setMemCache	: function(listKeyTile){
+		var $this=this
+		var db = $this.database.db;
+		var trans = db.transaction(["MemCache"], "readwrite");
+		var store = trans.objectStore("MemCache");
+		var time = new Date().getTime();
+		
+		var request = store.put({
+			"key":0,
+			"tileList":listKeyTile
+		});
+		request.onerror = function(e) {
+			console.log("ERROR setTile")
+		};				
+	},
+	getMemCache:function(callback) {
+		var cb = callback;
+		var $this=this
+		var db = $this.database.db;
+		if (db===null){
+			console.log("IndexDB is not opened yet!");
+			cb(null)
+		}
+		else {
+			var trans=db.transaction(["MemCache"],"readwrite");
+			var store=trans.objectStore("MemCache");		
+
+			var request=store.get(0);
 
 			request.onsuccess=function(e){
 				if (e.target.result){
@@ -244,8 +353,8 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		
 		}
 	},
+
 	setTile:function(tile) {
-		console.log("setTile")
 		var $this=this
 		var db = $this.database.db;
 		if (db===null){
@@ -267,7 +376,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 	},
 
 	getTile:function(url, callback) {
-		console.log("getTile")
 		var cb = callback;
 		var $this=this
 		var db = $this.database.db;
@@ -292,7 +400,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		}
 	},
 	getTiles:function(callback) {
-		console.log("getTiles")
 		var cb = callback;
 		var $this=this
 		var db = $this.database.db;
@@ -320,18 +427,15 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		};
 	},
 	delTile:function(url, callback) {
-		console.log("delTile")
 		var cb = callback;
 		var $this=this
 		var db = $this.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
-			cb(null)
-		}
-		else {
+		} else {
 			var trans=db.transaction(["Tile"],"readwrite");
 			var store=trans.objectStore("Tile");		
-
+			console.log("delTile", url);
 			var request=store.delete(url);
 			
 			request.onsuccess=function(e){
@@ -340,11 +444,88 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			request.onerror=function(e){
 				cb(false);	
 			};
-		
 		};
 	},
+	delTimeCash:function(){
+		var $this=this;
+		var db = $this.database.db;
+		if (db.objectStoreNames.contains("TimeCache")){
+			var trans=db.transaction(["TimeCache"],"readwrite");
+			var store=trans.objectStore("TimeCache");		
+			
+			var cursorRequest=store.openCursor();
+			cursorRequest.onsuccess=function(e){
+				var cursor=e.target.result;
+				if(cursor===null || cursor === undefined){
+					console.log("TimeCache Deleted")
+					$this.timeCacheDict={}
+				}
+				else {
+					cursor.delete();
+					cursor.continue();
+				}
+			};
+		}
+	},
+	resetDB:function(){
+		var $this=this;
+		var db = $this.database.db;
+		
+		if (db.objectStoreNames.contains("Tile")){
+			var trans=db.transaction(["Tile"],"readwrite");
+			var store=trans.objectStore("Tile");		
+			
+			var cursorRequest=store.openCursor();
+			cursorRequest.onsuccess=function(e){
+				var cursor=e.target.result;
+				if(cursor===null || cursor === undefined){
+					console.log("Tile Deleted")
+				}
+				else {
+					cursor.delete();
+					cursor.continue();
+				}
+			};
+		}
+		
+		if (db.objectStoreNames.contains("MemCache")){
+			var trans=db.transaction(["MemCache"],"readwrite");
+			var store=trans.objectStore("MemCache");		
+			
+			var cursorRequest=store.openCursor();
+			cursorRequest.onsuccess=function(e){
+				var cursor=e.target.result;
+				if(cursor===null || cursor === undefined){
+					console.log("MemCache Deleted")
+					$this.memCashList=[[],[]]
+				}
+				else {
+					cursor.delete();
+					cursor.continue();
+				}
+			};
+		}
+		
+		if (db.objectStoreNames.contains("TimeCache")){
+			var trans=db.transaction(["TimeCache"],"readwrite");
+			var store=trans.objectStore("TimeCache");		
+			
+			var cursorRequest=store.openCursor();
+			cursorRequest.onsuccess=function(e){
+				var cursor=e.target.result;
+				if(cursor===null || cursor === undefined){
+					console.log("TimeCache Deleted")
+					$this.timeCacheDict={}
+				}
+				else {
+					cursor.delete();
+					cursor.continue();
+				}
+			};
+		}
+		
+	},
 	_myLoadTile: function($this, tile, urlOut) {
-		console.log("_myLoadTile")
 		$this.getTile(urlOut, function(data){
 			if (data.image == null || data.image == undefined){
 				var xhr = new XMLHttpRequest();
@@ -367,7 +548,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 							context.drawImage(image, 0, 0);
 
 							var imageFile=canvas.toDataURL("image/jpeg",0.15);
-							$this.setTileMemCache({url:data.url, image:imageFile});
+							$this.setTile_setMemCache_setTimeCacheDict({url:data.url, image:imageFile});
 						
 						}
 						image.src=localURL
@@ -394,15 +575,13 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 					tile: tile,
 					url: tile.src
 				});	
-				$this.setTileMemCache({url:urlOut, image:tile.src})	
+				$this.setTile_setMemCache_setTimeCacheDict({url:urlOut, image:tile.src})	
 			}
 		})		
 	},
 	_loadTile: function (tile, tilePoint) {
-		console.log("_loadTile")
 		var $this=this
-		
-		var version=11
+		var version=67
 		
 		$this._adjustTilePoint(tilePoint);
 		var urlOut=$this.getTileUrl(tilePoint);
@@ -416,20 +595,98 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 				if (data){
 					$this.openDB(version, function(data){
 						if (data){
-							$this.getTileMemCache(function(data){
+							$this.getMemCache(function(data){
 								$this.memCashList=data
-								console.log("$this.memCashList", $this.memCashList);
-								$this._myLoadTile($this, tile, urlOut)
+								$this.getTimeCash(function(data){
+									$this.timeCacheDict=data;
+									$this._myLoadTile($this, tile, urlOut)
+								})
 							})
-							
 						}
 					})
 				}
-			})	
+			})
 		}  else {
 			$this._myLoadTile($this, tile, urlOut)
 			
 		} 
+	},
+	test : function(){
+		
+		var $this=this;
+		$this.test.result=[]
+		setInterval(function(){
+			var dList0={}
+			var dList1={}
+			var p=[]
+			var len=$this.test.result.length
+			for (var i=0;i<len;i++){
+				$this.test.result.pop()
+			}
+			
+			if ( $this.memCashList[0].length>0 ) {
+				$this.getTile($this.memCashList[0][parseInt(Math.random()*$this.memCashList[0].length-1)], function(data){
+					var Uncompress=data.image.length*6
+					var cpr=LZW.compress(data.image)
+					var Compress=cpr.length * 54
+					$this.test.result.push({"Why people use LZW for images??? JPEG / LZW JPEG":  Uncompress/ Compress})
+				})
+			}
+			
+			var acsVar0=[]
+			ascForEach($this.memCashList[0], function(el, callBack){
+				$this.getTile(el, function(data){
+					if (data.image===null){
+						acsVar0.push(el)
+					} 
+					callBack(acsVar0)
+				})
+			}, function(){
+				if (acsVar0.length==0){
+					$this.test.result.push({"OK getTile vs memCash (list0)":acsVar0.length})
+				} else {
+					$this.test.result.push({"NOT OK getTile vs memCash (list0)":acsVar0.length})
+				}
+			});
+			var acsVar1=[]
+			ascForEach($this.memCashList[1], function(el, callBack){
+				$this.getTile(el, function(data){
+					if (data.image===null){
+						acsVar1.push(el)
+					} 
+					callBack(acsVar1)
+				})
+			}, function(){
+				if (acsVar1.length==0){
+					$this.test.result.push({"OK getTile vs memCash (list0)":acsVar1.length})
+				} else {
+					$this.test.result.push({"NOT OK getTile vs memCash (list0)":acsVar1.length})
+				}
+			});
+			
+			
+			var bothList=[];
+			bothList.push.apply(bothList, $this.memCashList[0])
+			bothList.push.apply(bothList, $this.memCashList[1])
+			var dBothList={}
+			for (var i=0;i<bothList.length;i++) {
+				dBothList[bothList[i]]=""
+			}
+			if (Object.keys(dBothList).length == bothList.length){
+				$this.test.result.push({"OK - UNIQUE TEST dBothList TEST LENGTH GOOD": Object.keys(dBothList).length + " vs " + bothList.length})
+			} else {
+				$this.test.result.push({"NOT OK - UNIQUE TEST dBothList TEST LENGTH GOOD": Object.keys(dBothList).length + " vs " + bothList.length})
+			}
+			
+			$this.getTiles( function(data){
+				if (data.length==bothList.length){
+					$this.test.result.push({"OK - COMPARE Images in DB vs bothList": data.length + " vs " + bothList.length})
+				} else {
+					$this.test.result.push({"NOT OK - COMPARE Images in DB vs bothList": data.length + " vs " + bothList.length})
+				}
+			})
+			
+		},15000)
 	}
 })
 L.tileLayer.dbTileLayer = function (url, options) {
