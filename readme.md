@@ -53,13 +53,13 @@ File has been tested on Chrome and FireFox and works. It will be better soon.
 <br>	mapLayer.addTo(map)
 ...
 To change options of layer:
-var options={
-				attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
-				dateTo:new Date("1/1/2015"), 
-				dbName:"map", // without it is url
-				compress:0.16  // without it is 0.15
-			}
-		mapLayer.setOptions(options)
+	var options={
+			attribution: 'Bla bla',
+			dateTo:new Date("1/1/2015"), 
+			dbName:"map", // without it is url
+			compress:0.16  // without it is 0.15
+		}
+	mapLayer.setOptions(options)
 </pre>
 ...
 To remove layer:
