@@ -1,15 +1,15 @@
 'use strict';
 var DB={}
 DB={
-	openDB:function($this, version, cb){
+	openDB:function($t, version, cb){
 		
-		if ($this.option.dbName === null || $this.option.dbName === undefined) {
-			$this.option.dbName=window.location.host + "//map"
-			if ($this.option.dbName === "//map" || $this.option.dbName === "//map") {
-				$this.option.dbName="map"
+		if ($t.option.dbName === null || $t.option.dbName === undefined) {
+			$t.option.dbName=window.location.host + "//map"
+			if ($t.option.dbName === "//map" || $t.option.dbName === "//map") {
+				$t.option.dbName="map"
 			}
 		}
-		var request=indexedDB.open($this.options.dbName, version)
+		var request=indexedDB.open($t.options.dbName, version)
 		request.onupgradeneeded=function(e){
 			var db=e.target.result;
 			e.target.transaction.onerror=indexedDB.onerror;
@@ -33,31 +33,30 @@ DB={
 				{keyPath:"key"});
 		}
 		request.onsuccess = function(e) {
-			$this.database.db = e.target.result;
+			$t.database.db = e.target.result;
 			cb(true)
 		};
-		request.onerror = $this.databaseError;
+		request.onerror = $t.databaseError;
 	},
 
-	setTimeCash: function($this){
-		if (Object.keys($this.timeCacheDict).length<$this.database.maxNoOfFixDate) {
-			var db = $this.database.db;
+	setTimeCash: function($t){
+		if (Object.keys($t.timeCacheDict).length<$t.database.maxNoOfFixDate) {
+			var db = $t.database.db;
 			var trans = db.transaction(["TimeCache"], "readwrite");
 			var store = trans.objectStore("TimeCache");
-			var time = new Date().getTime();
 			
 			var request = store.put({
 				"key":0,
-				"timeDict":$this.timeCacheDict
+				"timeDict":$t.timeCacheDict
 			});
 			request.onerror = function(e) {
 				console.log("ERROR setTimeCash")
 			};		
 		}	
 	},
-	getTimeCash:function($this, callback) {
+	getTimeCash:function($t, callback) {
 		var cb = callback;
-		var db = $this.database.db;
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 			cb(null)
@@ -75,12 +74,12 @@ DB={
 					cb({})
 				};
 			};
-			request.onerror=$this.databaseError;
+			request.onerror=$t.databaseError;
 		}
 	},
 	
-	setMemCache	: function($this, listKeyTile){
-		var db = $this.database.db;
+	setMemCache	: function($t, listKeyTile){
+		var db = $t.database.db;
 		var trans = db.transaction(["MemCache"], "readwrite");
 		var store = trans.objectStore("MemCache");
 		var time = new Date().getTime();
@@ -93,9 +92,9 @@ DB={
 			console.log("ERROR setMemCache")
 		};				
 	},
-	getMemCache:function($this, callback) {
+	getMemCache:function($t, callback) {
 		var cb = callback;
-		var db = $this.database.db;
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 			cb(null)
@@ -113,13 +112,13 @@ DB={
 					cb([[],[]])
 				};
 			};
-			request.onerror=$this.databaseError;
+			request.onerror=$t.databaseError;
 		
 		}
 	},
 	
-	setTile:function($this, tile) {
-		var db = $this.database.db;
+	setTile:function($t, tile) {
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 		}
@@ -138,17 +137,16 @@ DB={
 		}
 	},
 	
-	getTile:function($this, url, callback) {
+	getTile:function($t, url, callback) {
 		var cb = callback;
-		var db = $this.database.db;
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 			cb(null)
 		}
 		else {
 			var trans=db.transaction(["Tile"],"readwrite");
-			var store=trans.objectStore("Tile");		
-			console.log("url", url)
+			var store=trans.objectStore("Tile");
 			var request=store.get(url);
 			
 			request.onsuccess=function(e){
@@ -158,12 +156,12 @@ DB={
 					cb({url:url, image:null})
 				};
 			};
-			request.onerror=$this.databaseError;
+			request.onerror=$t.databaseError;
 		}
 	},
-	getTiles:function($this, callback) {
+	getTiles:function($t, callback) {
 		var cb = callback;
-		var db = $this.database.db;
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 			cb(null)
@@ -183,13 +181,13 @@ DB={
 					cb(tiles)
 				};
 			};
-			request.onerror=$this.databaseError;
+			request.onerror=$t.databaseError;
 		
 		};
 	},
-	delTile:function($this, url, callback) {
+	delTile:function($t, url, callback) {
 		var cb = callback;
-		var db = $this.database.db;
+		var db = $t.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
 		} else {
@@ -276,11 +274,11 @@ function ascForEach(array, fn, callback) {
 		callback(); 
 	  }		
 	}
-function fixTile($this, List0, List1, maxTile) {
+function fixTile($t, List0, List1, maxTile) {
 	var shiftVal;
 	var forDel;
 	if (List0.length > maxTile) {
-		var shiftVal1 = List0.shift(); // why? - bug in javascript
+		var shiftVal1 = List0.shift(); // why? 
 		shiftVal=shiftVal1
 		List1.push(shiftVal);
 	}
@@ -290,7 +288,7 @@ function fixTile($this, List0, List1, maxTile) {
 		forDel=shiftVal
 		
 		// remove map from database
-		if ($this.timeCacheDict[shiftVal] != null && $this.timeCacheDict[shiftVal] != undefined){
+		if ($t.timeCacheDict[shiftVal] != null && $t.timeCacheDict[shiftVal] != undefined){
 			var cntTile=0;
 			while (true) {
 				List0.push(shiftVal);
@@ -299,12 +297,11 @@ function fixTile($this, List0, List1, maxTile) {
 				List1.push(shiftVal);
 				var shiftVal1=List1.shift();
 				shiftVal=shiftVal1;
-				console.log("$this.timeCacheDict: ", $this.timeCacheDict)
-				if ($this.timeCacheDict[shiftVal] == null || $this.timeCacheDict[shiftVal] == undefined){
-					DB.delTile($this, shiftVal, function(data){
+				if ($t.timeCacheDict[shiftVal] == null || $t.timeCacheDict[shiftVal] == undefined){
+					DB.delTile($t, shiftVal, function(data){
 						if (!data){
 							setTimeout(function(){
-								DB.delTile($this, shiftVal, function(data){
+								DB.delTile($t, shiftVal, function(data){
 									console.log("DELETED AGAIN", data)
 									if (!data) {
 										console.log("HEBI GA")
@@ -321,11 +318,10 @@ function fixTile($this, List0, List1, maxTile) {
 				if (cntTile>maxTile) {
 					// this is imposible state
 					console.log("imposible state, ghost in computer")
-					DB.delTile($this, forDel, function(data){
-						console.log("$this while 3", data)
+					DB.delTile($t, forDel, function(data){
 						if (!data){
 							setTimeout(function(){
-								DB.delTile($this, forDel, function(data){
+								DB.delTile($t, forDel, function(data){
 									console.log("DELETED AGAIN", data)
 									if (!data) {
 										console.log("HEBI GA")
@@ -340,11 +336,11 @@ function fixTile($this, List0, List1, maxTile) {
 			}	
 		} else {
 			
-			DB.delTile($this, forDel, function(data){
+			DB.delTile($t, forDel, function(data){
 				console.log("DELETED", data)
 				if (!data){
 					setTimeout(function(){
-						DB.delTile($this, shiftVal, function(data){
+						DB.delTile($t, shiftVal, function(data){
 							console.log("DELETED AGAIN", data)
 							if (!data) {
 								console.log("HEBI GA")
@@ -368,11 +364,10 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		$this.timeCacheDict={}
 		$this.database = {};
 		$this.database.db = null;
-		$this.database.maxTile = 1000;
-		$this.database.maxNoOfFixDate = 1000;
+		$this.database.maxTile = 100;
+		$this.database.maxNoOfFixDate = 100;
 		
 		$this.memCashList=[[],[]]
-		
 	},
 	databaseError : function(e, cb) {
 		cb(undefined)
@@ -389,7 +384,11 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		}
 	},
 	
-	setTile_setMemCache_setTimeCacheDict:function($this, urlImage){
+	setTile_setMemCache_setTimeCacheDict:function( urlImage ){
+		var $this=this;
+		setInterval(function(){
+			console.log("timeCacheDict length", Object.keys($this.timeCacheDict).length)
+		},10000)
 		var db = $this.database.db;
 		if (db===null){
 			console.log("IndexDB is not opened yet!");
@@ -441,7 +440,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			DB.setTimeCash($this)
 			$this.memCashList=fixTile($this, List0, List1, $this.database.maxTile)
 			DB.setMemCache($this, $this.memCashList);
-			
 		}
 	},	
 
@@ -458,7 +456,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			cursorRequest.onsuccess=function(e){
 				var cursor=e.target.result;
 				if(cursor===null || cursor === undefined){
-					console.log("TimeCache Deleted")
 					$this.timeCacheDict={}
 				}
 				else {
@@ -526,7 +523,8 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		}
 		
 	},
-	_myLoadTile: function($this, tile, urlOut) {
+	_myLoadTile: function( tile, urlOut ) {
+		var $this = this;
 		DB.getTile($this, urlOut, function(data){
 			if (data.image == null || data.image == undefined){
 				var xhr = new XMLHttpRequest();
@@ -549,8 +547,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 							context.drawImage(image, 0, 0);
 
 							var imageFile=canvas.toDataURL("image/jpeg",$this.option.compress);
-							console.log("$this.option.compress", $this.option.compress);
-							$this.setTile_setMemCache_setTimeCacheDict($this, {url:data.url, image:imageFile});
+							$this.setTile_setMemCache_setTimeCacheDict( {url:data.url, image:imageFile});
 						
 						}
 						image.src=localURL
@@ -562,9 +559,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 								url: tile.src
 							})								
 					} 
-				/*	else {
-						console.log("indexDB net NOT OK")
-					}; */
 				};
 			} else {
 				var image = new Image();
@@ -578,7 +572,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 					tile: tile,
 					url: tile.src
 				});	
-				$this.setTile_setMemCache_setTimeCacheDict($this, {url:urlOut, image:tile.src})	
+				$this.setTile_setMemCache_setTimeCacheDict({url:urlOut, image:tile.src})	
 			}
 		})		
 	},
@@ -592,6 +586,8 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 		tile._layer  = $this;
 		tile.onload  = $this._tileOnLoad;
 		tile.onerror = $this._tileOnError;
+		
+		
 
 		if ($this.database.db==null || $this.database.db==undefined) {
 			$this.checkDB(function(data){
@@ -602,7 +598,7 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 								$this.memCashList=data
 								DB.getTimeCash($this, function(data){
 									$this.timeCacheDict=data;
-									$this._myLoadTile($this, tile, urlOut)
+									$this._myLoadTile( tile, urlOut)
 								})
 							})
 						}
@@ -610,13 +606,17 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 				}
 			})
 		}  else {
-			$this._myLoadTile($this, tile, urlOut)
+			$this._myLoadTile( tile, urlOut)
 			
 		} 
 	},
-	test : function(){
-		
+	setOptions : function(options){
 		var $this=this;
+		$this.option=options
+	},
+	test : function(){
+		var $this=this;
+		
 		$this.test.result=[]
 		setInterval(function(){
 			var dList0={}
@@ -626,7 +626,6 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 			for (var i=0;i<len;i++){
 				$this.test.result.pop()
 			}
-			
 			if ( $this.memCashList[0].length>0 ) {
 				DB.getTile($this, $this.memCashList[0][parseInt(Math.random()*$this.memCashList[0].length-1)], function(data){
 					var Uncompress=data.image.length*6
@@ -688,9 +687,8 @@ L.TileLayer.dbTileLayer = L.TileLayer.extend({
 					$this.test.result.push({"NOT OK - COMPARE Images in DB vs bothList": data.length + " vs " + bothList.length})
 				}
 			});
-			console.log("timeCacheDict", $this.timeCacheDict)
-			
-		},15000)
+			$this.test.result.push({"timedict length":Object.keys($this.timeCacheDict).length})
+		},5000)
 	}
 })
 L.tileLayer.dbTileLayer = function (url, options) {

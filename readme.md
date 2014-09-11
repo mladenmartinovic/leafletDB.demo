@@ -1,5 +1,5 @@
 <h3> dbTileLayer.js</h3> 
-<em>verson 0.5</em> 
+<em>verson 0.6</em> 
 <pre>
 My solution of offline map using leaflet.js and indexedDB. 
 IndexedDB consists of three tables, Tile, MemCache and TimeCache. 
@@ -8,9 +8,8 @@ Table Tile consist of JPEG images converted with canvas with compression of 0.15
 which means <b> original tile of cca 50kB convert to cca 6 kB.</b> Quality of images you can
 see on test, I think its good.
 In the future, the best way is to already have compresed tiles on server and take it
- as is. ( in this case we will "save our internet" ).
-<b>LZW compresion give us compress/uncompress ratio 1.5-2 which mean its useless for 
-images.</b>
+ as is.
+<b>LZW compresion is useless for images.</b>
 
 MemCache:
 200 tiles was forseen with logic of MemCache. MemCache is table with the url of individual 
@@ -24,7 +23,7 @@ MemCache is name of table and has nothing to do with Memcached.
 
 TimeCache:
 If we put time limit of map it permanent save half to the point of time. After this point it 
-could be erase, if come on last place. Other word, it save permanent first 200 tiles, after 
+could be erase, if come on last place. Other word, it save permanent first 100 tiles, after 
 save but not permanent. It works on this way because I need that on this way. 
 
 File has been tested on Chrome and FireFox and works. It will be better soon.
@@ -46,13 +45,27 @@ File has been tested on Chrome and FireFox and works. It will be better soon.
 	var map = L.map('map').setView([someLat,someLng], someZoom);
 	var options={
 			attribution: 'Bla bla',
-			dateTo:new Date("10/1/2014"), // with of without it
-			dbName:"map" // you can name database or without it as url
+			dateTo:new Date("12/1/2014"), 
+			dbName:"map" // without it is url
+			compress:0.16  // without it is 0.15
 		}
 	var mapLayer=L.tileLayer.dbTileLayer('http://someServer/tile/{z}/{y}/{x}', options);	
 <br>	mapLayer.addTo(map)
-
+...
+To change options of layer:
+var options={
+				attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
+				dateTo:new Date("1/1/2015"), 
+				dbName:"map", // without it is url
+				compress:0.16  // without it is 0.15
+			}
+		mapLayer.setOptions(options)
 </pre>
+...
+To remove layer:
+map.removeLayer(mapLayer);
+(it is untested)
+
 <a href="http://plnkr.co/edit/3yk2ysbVGNtsgluPsVPQ?p=preview"  target="dbTileLayer">Test example</a>
 
 <h4>Have a fun!</h4>
